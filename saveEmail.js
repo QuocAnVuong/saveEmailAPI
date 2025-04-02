@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
-// const EMAIL_DIR = 'D:/EmailData';
+const EMAIL_DIR = 'D:/EmailData';
 // const EMAIL_DIR = process.env.EMAIL_DIR || path.join(__dirname, 'EmailData');
-const EMAIL_DIR = path.join(__dirname, 'EmailData')||process.env.EMAIL_DIR;
+// const EMAIL_DIR = path.join(__dirname, 'EmailData')||process.env.EMAIL_DIR;
 console.log('Email directory set to:', EMAIL_DIR);
 
 function saveEmailToFile(emailContent,emailName) {
