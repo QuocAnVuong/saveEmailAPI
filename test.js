@@ -87,4 +87,15 @@ app.post('/saveEmail', async (req, res)=>{
   }
 })
 
+var options_auth = {
+  'method': 'POST',
+  'url': 'http://xecm-dev-aio01.dsg.internal/OTCS/cs.exe/api/v1/auth',
+  'headers': {
+    'Content-Type': 'application/x-www-form-urlencoded'
+  },
+  form: {
+    'username': 'admin',
+    'password': 'P@ssw0rd'
+  }
+};
     
