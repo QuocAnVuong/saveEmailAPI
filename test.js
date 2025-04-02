@@ -72,7 +72,7 @@ app.post('/emailPost', upload.single('file'), (req, res) => {
 
 app.post('/saveEmail', async (req, res)=>{
   try {
-    console.log(req.body)
+    // console.log(req.body)
     const { emailContent,emailName } = req.body;
     if (!emailContent) {
       return res.status(400).json({ error: 'No email content provided' });

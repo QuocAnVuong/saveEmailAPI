@@ -3,7 +3,8 @@ const path = require('path');
 
 // const EMAIL_DIR = 'D:/EmailData';
 // const EMAIL_DIR = process.env.EMAIL_DIR || path.join(__dirname, 'EmailData');
-const EMAIL_DIR = path.join('D:/EmailData')||process.env.EMAIL_DIR;
+const EMAIL_DIR = path.join(__dirname, 'EmailData')||process.env.EMAIL_DIR;
+console.log('Email directory set to:', EMAIL_DIR);
 
 function saveEmailToFile(emailContent,emailName) {
   return new Promise((resolve, reject) => {
@@ -12,8 +13,11 @@ function saveEmailToFile(emailContent,emailName) {
     }
     
     if (!fs.existsSync(EMAIL_DIR)) {
-      fs.mkdirSync(EMAIL_DIR, { recursive: true });
-    }
+        fs.mkdirSync(EMAIL_DIR, { recursive: true });
+        console.log(`Directory created: ${EMAIL_DIR}`);
+      } else {
+        console.log(`Directory already exists: ${EMAIL_DIR}`);
+      }
     
     
     const filename = `${emailName}.eml`;
