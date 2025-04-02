@@ -1,110 +1,62 @@
-const express = require('express')
-const { getDb, connectToDb } = require('./db')
-const { ObjectId } = require('mongodb')
+const express = require('express');
+const { getDb, connectToDb } = require('./db');
+const { ObjectId, GridFSBucket } = require('mongodb');
+const cors = require('cors');
 
-// init app & middleware
-const app = express()
-app.use(express.json())
+const app = express();
+app.use(express.json({ limit: '50mb' }));
+app.use(cors());
 
-// db connection
-let db
+let db;
 
 connectToDb((err) => {
-  if(!err){
-    app.listen('3000', () => {
-      console.log('app listening on port 3000')
-    })
-    db = getDb()
+  if (!err) {
+    app.listen('8000', () => {
+      console.log('app listening on port 8000');
+    });
+    db = getDb();
   }
-})
+});
 
-// routes
-app.get('/books', (req, res) => {
-  // current page
-  const page = req.query.p || 0
-  const booksPerPage = 3
-  
-  let books = []
+// Use express.text() middleware for this endpoint to accept raw EML files.
+app.post('/mails', express.text({ type: 'message/rfc822' }), async (req, res) => {
+  console.log("post mongoDB call")
+  try {
+    const emlContent = req.body; // The raw EML string.
+    const bucket = new GridFSBucket(db, { bucketName: 'emlFiles' });
+    const uploadStream = bucket.openUploadStream('email.eml', {
+      contentType: 'message/rfc822'
+    });
 
-  db.collection('books')
-    .find()
-    .sort({author: 1})
-    .skip(page * booksPerPage)
-    .limit(booksPerPage)
-    .forEach(book => books.push(book))
-    .then(() => {
-      res.status(200).json(books)
-    })
-    .catch(() => {
-      res.status(500).json({error: 'Could not fetch the documents'})
-    })
-})
+    await new Promise((resolve, reject) => {
+      uploadStream.on('finish', resolve);
+      uploadStream.on('error', reject);
+      uploadStream.end(emlContent);
+    });
 
-app.get('/books/:id', (req, res) => {
-
-  if (ObjectId.isValid(req.params.id)) {
-
-    db.collection('books')
-      .findOne({_id: new ObjectId(req.params.id)})
-      .then(doc => {
-        res.status(200).json(doc)
-      })
-      .catch(err => {
-        res.status(500).json({error: 'Could not fetch the document'})
-      })
-      
-  } else {
-    res.status(500).json({error: 'Could not fetch the document'})
+    res.status(201).json({ message: 'EML file stored successfully', fileId: uploadStream.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
+});
 
-})
+app.get('/mails/:id/eml', async (req, res) => {
+  try {
+    const fileId = req.params.id;
+    const bucket = new GridFSBucket(db, { bucketName: 'emlFiles' });
+    // Convert fileId to an ObjectId if needed.
+    const objectId = new ObjectId(fileId);
 
-app.post('/books', (req, res) => {
-  const book = req.body
+    res.set({
+      'Content-Type': 'message/rfc822',
+      'Content-Disposition': 'attachment; filename="email.eml"'
+    });
 
-  db.collection('books')
-    .insertOne(book)
-    .then(result => {
-      res.status(201).json(result)
-    })
-    .catch(err => {
-      res.status(500).json({err: 'Could not create new document'})
-    })
-})
-
-app.delete('/books/:id', (req, res) => {
-
-  if (ObjectId.isValid(req.params.id)) {
-
-  db.collection('books')
-    .deleteOne({ _id: new ObjectId(req.params.id) })
-    .then(result => {
-      res.status(200).json(result)
-    })
-    .catch(err => {
-      res.status(500).json({error: 'Could not delete document'})
-    })
-
-  } else {
-    res.status(500).json({error: 'Could not delete document'})
+    const downloadStream = bucket.openDownloadStream(objectId);
+    downloadStream.pipe(res);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
   }
-})
-
-app.patch('/books/:id', (req, res) => {
-  const updates = req.body
-
-  if (ObjectId.isValid(req.params.id)) {
-
-    db.collection('books')
-      .updateOne({ _id: new ObjectId(req.params.id) }, {$set: updates})
-      .then(result => {
-        res.status(200).json(result)
-      })
-      .catch(err => {
-        res.status(500).json({error: 'Could not update document'})
-      })
-
-  } else {
-    res.status(500).json({error: 'Could not update document'})
-  }
-})
+});

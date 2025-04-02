@@ -4,9 +4,9 @@ let dbConnection
 
 module.exports = {
   connectToDb: (cb) => {
-    MongoClient.connect('mongodb://localhost:27017/bookstore')
+    MongoClient.connect('mongodb+srv://An:TKixmskFnW5p57f4@cluster0.beuoe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
       .then(client => {
-        dbConnection = client.db()
+        dbConnection = client.db("OutlookMail")
         return cb()
       })
       .catch(err => {
