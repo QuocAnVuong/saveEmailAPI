@@ -4,7 +4,7 @@ let dbConnection
 
 module.exports = {
   connectToDb: (cb) => {
-    MongoClient.connect('mongodb+srv://An:TKixmskFnW5p57f4@cluster0.beuoe.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+    MongoClient.connect(process.env.MONGO_DB_URI)
       .then(client => {
         dbConnection = client.db("OutlookMail")
         return cb()
